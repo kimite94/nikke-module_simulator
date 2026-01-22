@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>니케 오버로드 풀세트(4부위) 시뮬레이터</title>
+    <title>니케 오버로드 풀세트 전략 시뮬레이터</title>
     <style>
         :root { --nike-gold: #ffeb3b; --nike-blue: #00e5ff; --bg: #121212; --card: #1e1e1e; }
         body { font-family: 'Pretendard', sans-serif; background-color: var(--bg); color: #e0e0e0; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
@@ -18,49 +18,44 @@
         #result { margin-top: 25px; padding: 20px; background-color: #252525; border-radius: 10px; border-top: 4px solid var(--nike-gold); line-height: 1.8; }
         .strategy-card { background: #1a1a1a; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px dashed var(--nike-blue); font-size: 0.95rem; }
         .highlight { color: var(--nike-gold); font-weight: bold; }
-        .blue { color: var(--nike-blue); font-weight: bold; }
         .small-info { font-size: 0.8rem; color: #777; margin-top: 15px; text-align: center; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>NIKKE 장비 풀세트 옵작 가이드</h1>
+    <h1>NIKKE 4부위 합산 옵작 가이드</h1>
     
     <div class="section-label">1. 자원 설정</div>
-    <label style="font-size: 0.8rem; color: #888;">전체 보유 커스텀 모듈 (4개 장비 공통 사용)</label>
+    <label style="font-size: 0.8rem; color: #888;">보유 커스텀 모듈 (전체 부위 총합)</label>
     <input type="number" id="moduleInput" class="input-box" value="100">
 
-    <div class="section-label">2. 4부위 합산 목표 설정 (최대 3개 옵션)</div>
+    <div class="section-label">2. 4부위 수치 합산 목표 (최대 3개)</div>
     <div id="targetContainer">
         <div class="target-row">
-            <select id="opt1" onchange="updatePlaceholder(1)"></select>
+            <select id="opt1"></select>
             <input type="number" id="val1" step="0.01" placeholder="합계(%)">
-            <span style="font-size: 0.8rem;">합계</span>
+            <span>합계</span>
         </div>
         <div class="target-row">
-            <select id="opt2" onchange="updatePlaceholder(2)"></select>
+            <select id="opt2"></select>
             <input type="number" id="val2" step="0.01" placeholder="합계(%)">
-            <span style="font-size: 0.8rem;">합계</span>
+            <span>합계</span>
         </div>
         <div class="target-row">
-            <select id="opt3" onchange="updatePlaceholder(3)"></select>
+            <select id="opt3"></select>
             <input type="number" id="val3" step="0.01" placeholder="합계(%)">
-            <span style="font-size: 0.8rem;">합계</span>
+            <span>합계</span>
         </div>
     </div>
 
-    <button onclick="runNikkeSetStrategy()">전체 부위 시뮬레이션 실행</button>
+    <button onclick="runNikkeFullSimulation()">전체 부위 분석 시작</button>
 
-    <div id="result">4개 부위 전체에 모듈을 배분했을 때의 성공 확률을 계산합니다.</div>
-    
-    <div class="small-info">
-        ※ 4개 장비 총 12개 슬롯의 수치를 합산하여 계산합니다.<br>
-        ※ 옵션 확률: 10~12%, 수치 등급 확률: 60/35/5% 적용.
-    </div>
+    <div id="result">4개 장비의 모든 슬롯 수치를 합산하여 성공 확률을 분석합니다.</div>
 </div>
 
 <script>
+// 사진 데이터 기반 옵션 및 수치 정의
 const optionData = [
     { name: "선택 안 함", weight: 0, levels: [] },
     { name: "우월코드 데미지", weight: 10, levels: [9.54, 10.94, 12.34, 13.75, 15.15, 16.55, 17.95, 19.35, 20.75, 22.15, 23.56, 24.96, 26.36, 27.76, 29.16] },
@@ -75,7 +70,7 @@ const optionData = [
 ];
 
 function init() {
-    document.querySelectorAll('#opt1, #opt2, #opt3').forEach(s => {
+    document.querySelectorAll('select').forEach(s => {
         optionData.forEach((o, i) => {
             let opt = document.createElement('option');
             opt.value = i; opt.textContent = o.name;
@@ -84,24 +79,16 @@ function init() {
     });
 }
 
-function updatePlaceholder(num) {
-    const idx = document.getElementById(`opt${num}`).value;
-    const input = document.getElementById(`val${num}`);
-    if(idx > 0) {
-        input.placeholder = `풀셋 최대 ${(optionData[idx].levels[14] * 12).toFixed(1)}%`;
-    }
-}
-
 function getLevelValue(optIdx) {
     const r = Math.random() * 100;
-    let rankIdx = 0;
-    if (r < 60) rankIdx = Math.floor(Math.random() * 5);
-    else if (r < 95) rankIdx = Math.floor(Math.random() * 5) + 5;
-    else rankIdx = Math.floor(Math.random() * 5) + 10;
-    return optionData[optIdx].levels[rankIdx];
+    let stepIdx = 0;
+    if (r < 60) stepIdx = Math.floor(Math.random() * 5); // 1~5단 (60%)
+    else if (r < 95) stepIdx = Math.floor(Math.random() * 5) + 5; // 6~10단 (35%)
+    else stepIdx = Math.floor(Math.random() * 5) + 10; // 11~15단 (5%)
+    return optionData[optIdx].levels[stepIdx];
 }
 
-function runNikkeSetStrategy() {
+function runNikkeFullSimulation() {
     const totalModules = parseInt(document.getElementById('moduleInput').value);
     const targets = [];
     for(let i=1; i<=3; i++) {
@@ -110,63 +97,52 @@ function runNikkeSetStrategy() {
         if(id > 0 && !isNaN(val)) targets.push({ id, val });
     }
 
-    if(targets.length === 0) { alert("목표 합계 수치를 입력해주세요."); return; }
+    if(targets.length === 0) { alert("목표 옵션과 합산 수치를 입력해주세요."); return; }
 
-    const iterations = 5000; // 계산 부하를 고려해 5000회로 조정
+    const iterations = 5000;
     let successCount = 0;
     const totalWeight = optionData.reduce((a, b) => a + b.weight, 0);
 
     for (let i = 0; i < iterations; i++) {
-        let modulesPerGear = Math.floor(totalModules / 4); // 4개 장비에 균등 분배
-        let totalSumPerOpt = {};
-        targets.forEach(t => totalSumPerOpt[t.id] = 0);
+        let mLeft = totalModules;
+        let sumByOpt = {};
+        targets.forEach(t => sumByOpt[t.id] = 0);
 
-        // 4개 부위 각각 옵작 수행
+        // 4부위 순차적으로 모듈 소모
         for (let gear = 0; gear < 4; gear++) {
-            let gearModules = modulesPerGear;
-            let gearBestOptions = {}; // 해당 장비에서 얻은 각 옵션의 최고값 저장
-
-            while (gearModules > 0) {
-                gearModules--;
+            // 부위당 배분된 모듈 (간단한 균등 배분 시뮬레이션)
+            let gearM = Math.floor(totalModules / 4);
+            while(gearM > 0) {
+                gearM--;
                 let lines = 1;
                 if(Math.random() < 0.5) lines++;
                 if(Math.random() < 0.3) lines++;
 
                 for(let l=0; l<lines; l++) {
                     let r = Math.random() * totalWeight;
-                    let sum = 0, rolledId = 0;
+                    let currentSum = 0, rolledId = 0;
                     for(let k=1; k<optionData.length; k++) {
-                        sum += optionData[k].weight;
-                        if(r <= sum) { rolledId = k; break; }
+                        currentSum += optionData[k].weight;
+                        if(r <= currentSum) { rolledId = k; break; }
                     }
-                    
-                    // 목표한 옵션이 나왔다면 해당 장비의 합계에 일단 가산 (로직 단순화: 중복 옵션 허용 가정)
-                    if(totalSumPerOpt.hasOwnProperty(rolledId)) {
-                        totalSumPerOpt[rolledId] += getLevelValue(rolledId);
+                    if(sumByOpt.hasOwnProperty(rolledId)) {
+                        sumByOpt[rolledId] += getLevelValue(rolledId);
                     }
                 }
             }
         }
-
-        // 모든 장비 옵작 후 목표 수치 달성 확인
-        let allMet = targets.every(t => totalSumPerOpt[t.id] >= t.val);
-        if(allMet) successCount++;
+        if(targets.every(t => sumByOpt[t.id] >= t.val)) successCount++;
     }
 
     const rate = (successCount / iterations * 100).toFixed(1);
-    let avgModules = (totalModules / 4).toFixed(0);
-    
-    let guide = "";
-    if (rate > 60) guide = `부위당 약 <span class='blue'>${avgModules}개</span>의 모듈을 투자하면 충분히 달성 가능한 목표입니다. 한 부위에서 종결급을 노리기보다 고르게 수치를 챙기세요.`;
-    else if (rate > 20) guide = "장비 4개를 모두 돌려야 하므로 자원이 분산됩니다. <span class='highlight'>장탄수나 공격력</span> 등 핵심 옵션이 1~2개 떴을 때 빠르게 다음 부위로 넘어가는 전략이 필요합니다.";
-    else guide = "4개 부위 합산 목표가 매우 높습니다. 모듈을 최소 200개 이상 확보하거나, 목표 수치를 현실적으로 낮추는 것을 추천합니다.";
-
     document.getElementById('result').innerHTML = `
-        <strong>[풀세트(4부위) 분석 리포트]</strong><br>
-        전체 부위 합산 목표 달성 확률: <span class="highlight" style="font-size:1.3rem">${rate}%</span><br>
+        <strong>[4부위 합산 분석 결과]</strong><br>
+        설정한 합계 수치 달성 확률: <span class="highlight" style="font-size:1.3rem">${rate}%</span><br>
         <div class="strategy-card">
-            <strong>💡 추천 운영 전략:</strong><br>
-            ${guide}
+            <strong>💡 운영 팁:</strong><br>
+            4개 부위의 총 12개 슬롯에서 수치를 끌어와야 합니다. <br>
+            특정 부위에서 <span class="highlight">높은 단계(11단 이상)</span>가 뜨면 잠그기를 고려하고, 
+            그 외에는 고르게 유효 옵션을 띄우는 것이 유리합니다.
         </div>
     `;
 }
