@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>니케 오버로드 정밀 시뮬레이터</title>
+    <title>니케 오버로드 풀세트(4부위) 시뮬레이터</title>
     <style>
         :root { --nike-gold: #ffeb3b; --nike-blue: #00e5ff; --bg: #121212; --card: #1e1e1e; }
         body { font-family: 'Pretendard', sans-serif; background-color: var(--bg); color: #e0e0e0; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
         .container { background-color: var(--card); padding: 25px; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); max-width: 600px; width: 100%; border: 1px solid #333; }
-        h1 { color: var(--nike-gold); text-align: center; font-size: 1.5rem; margin-bottom: 25px; border-bottom: 2px solid #333; padding-bottom: 10px; }
-        .section-label { font-size: 1rem; color: var(--nike-gold); margin-bottom: 15px; font-weight: bold; }
-        .input-box { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #2a2a2a; color: white; margin-bottom: 20px; font-size: 1.1rem; box-sizing: border-box; }
+        h1 { color: var(--nike-gold); text-align: center; font-size: 1.4rem; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        .section-label { font-size: 1rem; color: var(--nike-gold); margin: 15px 0 10px 0; font-weight: bold; }
+        .input-box { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #2a2a2a; color: white; margin-bottom: 15px; font-size: 1.1rem; box-sizing: border-box; }
         .target-row { display: grid; grid-template-columns: 2fr 1fr 0.5fr; gap: 10px; margin-bottom: 10px; align-items: center; }
         .target-row select, .target-row input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #444; background: #333; color: white; box-sizing: border-box; }
         button { width: 100%; padding: 15px; border-radius: 8px; border: none; background: linear-gradient(135deg, #ffeb3b, #fbc02d); color: black; font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: 0.2s; margin-top: 10px; }
@@ -25,42 +25,42 @@
 <body>
 
 <div class="container">
-    <h1>NIKKE 장비 옵작 가이드</h1>
+    <h1>NIKKE 장비 풀세트 옵작 가이드</h1>
     
     <div class="section-label">1. 자원 설정</div>
-    <label style="font-size: 0.8rem; color: #888;">보유 커스텀 모듈 개수</label>
-    <input type="number" id="moduleInput" class="input-box" value="30">
+    <label style="font-size: 0.8rem; color: #888;">전체 보유 커스텀 모듈 (4개 장비 공통 사용)</label>
+    <input type="number" id="moduleInput" class="input-box" value="100">
 
-    <div class="section-label">2. 목표 옵션 및 수치 설정 (최대 3개)</div>
+    <div class="section-label">2. 4부위 합산 목표 설정 (최대 3개 옵션)</div>
     <div id="targetContainer">
         <div class="target-row">
             <select id="opt1" onchange="updatePlaceholder(1)"></select>
-            <input type="number" id="val1" step="0.01" placeholder="수치(%)">
-            <span style="font-size: 0.8rem;">이상</span>
+            <input type="number" id="val1" step="0.01" placeholder="합계(%)">
+            <span style="font-size: 0.8rem;">합계</span>
         </div>
         <div class="target-row">
             <select id="opt2" onchange="updatePlaceholder(2)"></select>
-            <input type="number" id="val2" step="0.01" placeholder="수치(%)">
-            <span style="font-size: 0.8rem;">이상</span>
+            <input type="number" id="val2" step="0.01" placeholder="합계(%)">
+            <span style="font-size: 0.8rem;">합계</span>
         </div>
         <div class="target-row">
             <select id="opt3" onchange="updatePlaceholder(3)"></select>
-            <input type="number" id="val3" step="0.01" placeholder="수치(%)">
-            <span style="font-size: 0.8rem;">이상</span>
+            <input type="number" id="val3" step="0.01" placeholder="합계(%)">
+            <span style="font-size: 0.8rem;">합계</span>
         </div>
     </div>
 
-    <button onclick="runNikkeStrategy()">최적 전략 분석 실행</button>
+    <button onclick="runNikkeSetStrategy()">전체 부위 시뮬레이션 실행</button>
 
-    <div id="result">목표와 모듈을 입력하면 성공 확률과 돌리는 방법을 알려드립니다.</div>
+    <div id="result">4개 부위 전체에 모듈을 배분했을 때의 성공 확률을 계산합니다.</div>
     
     <div class="small-info">
-        ※ 제공된 확률 테이블(10~12%) 및 등급별 확률(60/35/5%)이 적용되었습니다.
+        ※ 4개 장비 총 12개 슬롯의 수치를 합산하여 계산합니다.<br>
+        ※ 옵션 확률: 10~12%, 수치 등급 확률: 60/35/5% 적용.
     </div>
 </div>
 
 <script>
-// 사진 데이터 완벽 반영 (1~15단 수치)
 const optionData = [
     { name: "선택 안 함", weight: 0, levels: [] },
     { name: "우월코드 데미지", weight: 10, levels: [9.54, 10.94, 12.34, 13.75, 15.15, 16.55, 17.95, 19.35, 20.75, 22.15, 23.56, 24.96, 26.36, 27.76, 29.16] },
@@ -75,7 +75,7 @@ const optionData = [
 ];
 
 function init() {
-    document.querySelectorAll('.opt-select, select').forEach(s => {
+    document.querySelectorAll('#opt1, #opt2, #opt3').forEach(s => {
         optionData.forEach((o, i) => {
             let opt = document.createElement('option');
             opt.value = i; opt.textContent = o.name;
@@ -88,7 +88,7 @@ function updatePlaceholder(num) {
     const idx = document.getElementById(`opt${num}`).value;
     const input = document.getElementById(`val${num}`);
     if(idx > 0) {
-        input.placeholder = `최대 ${optionData[idx].levels[14]}%`;
+        input.placeholder = `풀셋 최대 ${(optionData[idx].levels[14] * 12).toFixed(1)}%`;
     }
 }
 
@@ -101,8 +101,8 @@ function getLevelValue(optIdx) {
     return optionData[optIdx].levels[rankIdx];
 }
 
-function runNikkeStrategy() {
-    const modules = parseInt(document.getElementById('moduleInput').value);
+function runNikkeSetStrategy() {
+    const totalModules = parseInt(document.getElementById('moduleInput').value);
     const targets = [];
     for(let i=1; i<=3; i++) {
         const id = parseInt(document.getElementById(`opt${i}`).value);
@@ -110,48 +110,62 @@ function runNikkeStrategy() {
         if(id > 0 && !isNaN(val)) targets.push({ id, val });
     }
 
-    if(targets.length === 0) { alert("옵션과 수치를 입력해주세요."); return; }
+    if(targets.length === 0) { alert("목표 합계 수치를 입력해주세요."); return; }
 
-    const iterations = 10000;
+    const iterations = 5000; // 계산 부하를 고려해 5000회로 조정
     let successCount = 0;
     const totalWeight = optionData.reduce((a, b) => a + b.weight, 0);
 
     for (let i = 0; i < iterations; i++) {
-        let mLeft = modules;
-        let isSuccess = false;
-        while(mLeft > 0) {
-            mLeft--;
-            let lines = 1;
-            if(Math.random() < 0.5) lines++;
-            if(Math.random() < 0.3) lines++;
+        let modulesPerGear = Math.floor(totalModules / 4); // 4개 장비에 균등 분배
+        let totalSumPerOpt = {};
+        targets.forEach(t => totalSumPerOpt[t.id] = 0);
 
-            for(let l=0; l<lines; l++) {
-                let r = Math.random() * totalWeight;
-                let sum = 0, rolledId = 0;
-                for(let k=1; k<optionData.length; k++) {
-                    sum += optionData[k].weight;
-                    if(r <= sum) { rolledId = k; break; }
-                }
-                if(targets.some(t => t.id === rolledId && getLevelValue(rolledId) >= t.val)) {
-                    isSuccess = true; break;
+        // 4개 부위 각각 옵작 수행
+        for (let gear = 0; gear < 4; gear++) {
+            let gearModules = modulesPerGear;
+            let gearBestOptions = {}; // 해당 장비에서 얻은 각 옵션의 최고값 저장
+
+            while (gearModules > 0) {
+                gearModules--;
+                let lines = 1;
+                if(Math.random() < 0.5) lines++;
+                if(Math.random() < 0.3) lines++;
+
+                for(let l=0; l<lines; l++) {
+                    let r = Math.random() * totalWeight;
+                    let sum = 0, rolledId = 0;
+                    for(let k=1; k<optionData.length; k++) {
+                        sum += optionData[k].weight;
+                        if(r <= sum) { rolledId = k; break; }
+                    }
+                    
+                    // 목표한 옵션이 나왔다면 해당 장비의 합계에 일단 가산 (로직 단순화: 중복 옵션 허용 가정)
+                    if(totalSumPerOpt.hasOwnProperty(rolledId)) {
+                        totalSumPerOpt[rolledId] += getLevelValue(rolledId);
+                    }
                 }
             }
-            if(isSuccess) break;
         }
-        if(isSuccess) successCount++;
+
+        // 모든 장비 옵작 후 목표 수치 달성 확인
+        let allMet = targets.every(t => totalSumPerOpt[t.id] >= t.val);
+        if(allMet) successCount++;
     }
 
     const rate = (successCount / iterations * 100).toFixed(1);
+    let avgModules = (totalModules / 4).toFixed(0);
+    
     let guide = "";
-    if (rate > 70) guide = "자원이 충분합니다. <span class='blue'>순차적으로 돌리며</span> 원하는 수치가 나오면 멈추세요.";
-    else if (rate > 30) guide = "성공 확률이 적당합니다. <span class='highlight'>가장 중요한 옵션 하나</span>를 3번줄에 고정하는 것을 우선 목표로 하세요.";
-    else guide = "목표가 매우 높습니다. 수치를 조금 타협하거나, <span class='highlight'>0잠금</span>으로 최대한 많은 시도를 하는 것이 유리합니다.";
+    if (rate > 60) guide = `부위당 약 <span class='blue'>${avgModules}개</span>의 모듈을 투자하면 충분히 달성 가능한 목표입니다. 한 부위에서 종결급을 노리기보다 고르게 수치를 챙기세요.`;
+    else if (rate > 20) guide = "장비 4개를 모두 돌려야 하므로 자원이 분산됩니다. <span class='highlight'>장탄수나 공격력</span> 등 핵심 옵션이 1~2개 떴을 때 빠르게 다음 부위로 넘어가는 전략이 필요합니다.";
+    else guide = "4개 부위 합산 목표가 매우 높습니다. 모듈을 최소 200개 이상 확보하거나, 목표 수치를 현실적으로 낮추는 것을 추천합니다.";
 
     document.getElementById('result').innerHTML = `
-        <strong>[시뮬레이션 분석 리포트]</strong><br>
-        보유 모듈 내 목표 달성 확률: <span class="highlight" style="font-size:1.3rem">${rate}%</span><br>
+        <strong>[풀세트(4부위) 분석 리포트]</strong><br>
+        전체 부위 합산 목표 달성 확률: <span class="highlight" style="font-size:1.3rem">${rate}%</span><br>
         <div class="strategy-card">
-            <strong>💡 추천 옵작 전략:</strong><br>
+            <strong>💡 추천 운영 전략:</strong><br>
             ${guide}
         </div>
     `;
