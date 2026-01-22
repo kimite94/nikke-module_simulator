@@ -2,138 +2,166 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>니케 오버로드 종결급 전략 분석기</title>
+    <title>NIKKE 오버로드 최적 경로 분석기</title>
     <style>
         :root { --nike-gold: #ffeb3b; --nike-blue: #00e5ff; --bg: #121212; --card: #1e1e1e; }
         body { font-family: 'Pretendard', sans-serif; background-color: var(--bg); color: #e0e0e0; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .container { background-color: var(--card); padding: 25px; border-radius: 15px; max-width: 700px; width: 100%; border: 1px solid #333; }
+        .container { background-color: var(--card); padding: 25px; border-radius: 15px; max-width: 750px; width: 100%; border: 1px solid #333; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
+        h1 { color: var(--nike-gold); text-align: center; font-size: 1.5rem; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+        .section-label { font-size: 1rem; color: var(--nike-gold); margin: 15px 0 5px 0; font-weight: bold; }
+        .input-box { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #2a2a2a; color: white; margin-bottom: 15px; font-size: 1.1rem; box-sizing: border-box; }
+        .target-row { display: grid; grid-template-columns: 2.5fr 1.5fr 0.5fr; gap: 10px; margin-bottom: 10px; align-items: center; }
+        select, input { padding: 10px; border-radius: 6px; border: 1px solid #444; background: #333; color: white; font-size: 0.95rem; }
+        button { width: 100%; padding: 18px; border-radius: 8px; border: none; background: linear-gradient(135deg, #ffeb3b, #fbc02d); color: black; font-weight: bold; font-size: 1.1rem; cursor: pointer; margin-top: 15px; }
+        #result { margin-top: 25px; padding: 20px; background-color: #252525; border-radius: 10px; border-top: 4px solid var(--nike-gold); line-height: 1.8; }
+        .strategy-card { background: #1a1a1a; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px dashed var(--nike-blue); font-size: 0.9rem; }
         .highlight { color: var(--nike-gold); font-weight: bold; }
-        .strategy-box { background: #252525; padding: 15px; border-radius: 10px; border-left: 4px solid var(--nike-blue); margin-top: 20px; font-size: 0.9rem; line-height: 1.6; }
-        .stat-badge { background: #444; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>오버로드 3옵션 & 고점 잠금 시뮬레이터</h1>
-        
-        <div style="margin: 20px 0;">
-            보유 모듈: <input type="number" id="moduleInput" value="500" style="width: 80px; background: #333; color: white; border: 1px solid #555;">
-        </div>
 
-        <div id="targetContainer">
-            <div class="target-row">
-                <select id="opt1"></select> <input type="number" id="val1" placeholder="목표 합계%">
-            </div>
-            <div class="target-row">
-                <select id="opt2"></select> <input type="number" id="val2" placeholder="목표 합계%">
-            </div>
-            <div class="target-row">
-                <select id="opt3"></select> <input type="number" id="val3" placeholder="목표 합계%">
-            </div>
-        </div>
+<div class="container">
+    <h1>NIKKE 오버로드 지능형 시뮬레이터</h1>
+    
+    <div class="section-label">1. 보유 커스텀 모듈</div>
+    <input type="number" id="moduleInput" class="input-box" value="300">
 
-        <button onclick="runUltimateSim()" style="width: 100%; padding: 15px; background: var(--nike-gold); border: none; font-weight: bold; cursor: pointer; border-radius: 8px; margin-top: 15px;">종결 경로 분석 시작</button>
-        <div id="result">분석 결과가 여기에 표시됩니다.</div>
+    <div class="section-label">2. 목표 옵션 및 합산 수치 (4부위 총합)</div>
+    <div id="targetContainer">
+        <div class="target-row"><select id="opt1"></select><input type="number" id="val1" step="0.1" value="80"><span>%</span></div>
+        <div class="target-row"><select id="opt2"></select><input type="number" id="val2" step="0.1" value="40"><span>%</span></div>
+        <div class="target-row"><select id="opt3"></select><input type="number" id="val3" step="0.1" placeholder="선택"><span>%</span></div>
     </div>
 
+    <button onclick="runUltimateAIAnalysis()">최적의 경우의 수 분석 시작</button>
+
+    <div id="result">슬롯 확률과 잠금 효율을 계산하여 최적의 방안을 제안합니다.</div>
+</div>
+
 <script>
-// 데이터 구조 및 확률 세팅 (이전과 동일)
 const optionData = [
     { name: "선택 안 함", weight: 0, levels: Array(15).fill(0) },
-    { name: "우월코드", weight: 10, levels: [9.54, 10.94, 12.34, 13.75, 15.15, 16.55, 17.95, 19.35, 20.75, 22.15, 23.56, 24.96, 26.36, 27.76, 29.16] },
+    { name: "우월코드 데미지", weight: 10, levels: [9.54, 10.94, 12.34, 13.75, 15.15, 16.55, 17.95, 19.35, 20.75, 22.15, 23.56, 24.96, 26.36, 27.76, 29.16] },
     { name: "공격력", weight: 10, levels: [4.77, 5.47, 6.18, 6.88, 7.59, 8.29, 9.00, 9.70, 10.40, 11.11, 11.81, 12.52, 13.22, 13.93, 14.63] },
-    { name: "최대장탄", weight: 12, levels: [27.84, 31.95, 36.06, 40.17, 44.28, 48.39, 52.50, 56.60, 60.71, 64.82, 68.93, 73.04, 77.15, 81.26, 85.37] }
+    { name: "최대 장탄 수", weight: 12, levels: [27.84, 31.95, 36.06, 40.17, 44.28, 48.39, 52.50, 56.60, 60.71, 64.82, 68.93, 73.04, 77.15, 81.26, 85.37] },
+    { name: "차지 속도", weight: 12, levels: [1.98, 2.28, 2.57, 2.86, 3.16, 3.45, 3.75, 4.04, 4.33, 4.63, 4.92, 5.21, 5.51, 5.80, 6.09] },
+    { name: "명중률", weight: 12, levels: [4.77, 5.47, 6.18, 6.88, 7.59, 8.29, 9.00, 9.70, 10.40, 11.11, 11.81, 12.52, 13.22, 13.93, 14.63] },
+    { name: "크리티컬 확률", weight: 10, levels: [2.30, 2.64, 2.98, 3.32, 3.66, 4.00, 4.35, 4.69, 5.03, 5.37, 5.70, 6.05, 6.39, 6.73, 7.07] }
 ];
+
 const slotProbs = [1.0, 0.5, 0.3];
 const stepProbs = [12,12,12,12,12,7,7,7,7,7,1,1,1,1,1];
 
-function getLevelWithRank(idx) {
+function getLevelInfo(idx) {
     let r = Math.random() * 100, cum = 0;
-    for (let i=0; i<15; i++) { 
-        cum += stepProbs[i]; 
-        if (r <= cum) return { val: optionData[idx].levels[i], rank: i + 1 }; 
+    for (let i=0; i<15; i++) {
+        cum += stepProbs[i];
+        if (r <= cum) return { val: optionData[idx].levels[i], rank: i + 1 };
     }
     return { val: optionData[idx].levels[14], rank: 15 };
 }
 
-function runUltimateSim() {
+function init() {
+    ['opt1','opt2','opt3'].forEach(id => {
+        const s = document.getElementById(id);
+        optionData.forEach((o, i) => { s.add(new Option(o.name, i)); });
+    });
+}
+
+function runUltimateAIAnalysis() {
     const totalM = parseInt(document.getElementById('moduleInput').value);
-    const targets = [
-        { id: parseInt(document.getElementById('opt1').value), val: parseFloat(document.getElementById('val1').value) },
-        { id: parseInt(document.getElementById('opt2').value), val: parseFloat(document.getElementById('val2').value) },
-        { id: parseInt(document.getElementById('opt3').value), val: parseFloat(document.getElementById('val3').value) }
-    ].filter(t => t.id > 0);
+    const targets = [];
+    for(let i=1; i<=3; i++) {
+        const id = parseInt(document.getElementById(`opt${i}`).value);
+        const val = parseFloat(document.getElementById(`val${i}`).value);
+        if(id > 0 && !isNaN(val)) targets.push({ id, val });
+    }
+    if(targets.length === 0) return;
 
     let success = 0;
-    for (let i = 0; i < 1500; i++) {
-        let gear = [[0,0,0], [0,0,0], [0,0,0], [0,0,0]];
-        let gearStats = [[{},{},{}], [{},{},{}], [{},{},{}], [{},{},{}]];
+    const iterations = 2000;
+
+    for (let i = 0; i < iterations; i++) {
+        let gearIds = [[0,0,0],[0,0,0],[0,0,0],[0,0,0]];
+        let gearStats = [[{},{},{}],[{},{},{}],[{},{},{}],[{},{},{}]];
         let m = totalM;
 
-        // 초기 오버로드 생략(루프 내 포함)
+        // 1. 최초 오버로드 (10단 보장)
+        for(let g=0; g<4; g++) {
+            if(m-- <= 0) break;
+            for(let s=0; s<3; s++) {
+                if(Math.random() <= slotProbs[s]) {
+                    let rid = targets[Math.floor(Math.random()*targets.length)].id;
+                    gearIds[g][s] = rid;
+                    gearStats[g][s] = { val: optionData[rid].levels[9], rank: 10 };
+                }
+            }
+        }
+
+        // 2. 루프 시뮬레이션
         while(m > 0) {
             let sums = {};
             targets.forEach(t => {
                 let s = 0;
                 for(let g=0; g<4; g++) {
-                    for(let sl=0; sl<3; sl++) if(gear[g][sl] === t.id) s += gearStats[g][sl].val;
+                    for(let sl=0; sl<3; sl++) if(gearIds[g][sl] === t.id) s += gearStats[g][sl].val;
                 }
                 sums[t.id] = s;
             });
             if(targets.every(t => sums[t.id] >= t.val)) { success++; break; }
 
-            // 부위 선택 및 전략
+            // 부족한 부위 선택
             let g = Math.floor(Math.random() * 4);
-            let ownedInGear = [];
-            for(let sl=0; sl<3; sl++) if(targets.some(t => t.id === gear[g][sl])) ownedInGear.push(sl);
+            let owned = [];
+            for(let sl=0; sl<3; sl++) if(targets.some(t => t.id === gearIds[g][sl])) owned.push(sl);
 
-            // [상황별 잠금 판단]
-            if(ownedInGear.length === targets.length) {
-                // 수치 변경 모드
-                let highRankSlots = ownedInGear.filter(sl => gearStats[g][sl].rank >= 11);
-                if(highRankSlots.length > 0 && m >= (highRankSlots.length + 1)) {
-                    // 고점 옵션 잠금 수치 변경 (비용 2~3)
-                    m -= (highRankSlots.length + 1);
-                    ownedInGear.forEach(sl => {
-                        if(!highRankSlots.includes(sl)) {
-                            let res = getLevelWithRank(gear[g][sl]);
+            if(owned.length === targets.length) {
+                // 수치 최적화 단계
+                let highRanks = owned.filter(sl => gearStats[g][sl].rank >= 11);
+                if(highRanks.length > 0 && m >= highRanks.length + 1) {
+                    m -= (highRanks.length + 1); // 고점 옵션 잠금 후 수치변경
+                    owned.forEach(sl => {
+                        if(!highRanks.includes(sl)) {
+                            let res = getLevelInfo(gearIds[g][sl]);
                             if(res.val > gearStats[g][sl].val) gearStats[g][sl] = res;
                         }
                     });
                 } else {
-                    // 일반 수치 변경 (비용 1)
-                    m -= 1;
-                    ownedInGear.forEach(sl => {
-                        let res = getLevelWithRank(gear[g][sl]);
+                    m -= 1; // 전체 수치변경
+                    owned.forEach(sl => {
+                        let res = getLevelInfo(gearIds[g][sl]);
                         if(res.val > gearStats[g][sl].val) gearStats[g][sl] = res;
                     });
                 }
             } else {
-                // 효과 변경 모드 (잠금 포함)
-                let cost = ownedInGear.length + 1;
+                // 옵션 찾기 단계 (슬롯 지능형 잠금)
+                // 3번 슬롯에 유효옵이 있다면 최우선 잠금
+                let importantLocks = owned.filter(sl => sl === 2 || (sl === 1 && Math.random() < 0.5));
+                let cost = importantLocks.length + 1;
                 if(m < cost) break;
                 m -= cost;
+
                 for(let sl=0; sl<3; sl++) {
-                    if(!ownedInGear.includes(sl)) {
+                    if(!importantLocks.includes(sl)) {
                         if(Math.random() <= slotProbs[sl]) {
                             let rid = targets[Math.floor(Math.random()*targets.length)].id;
-                            gear[g][sl] = rid; gearStats[g][sl] = getLevelWithRank(rid);
-                        } else { gear[g][sl] = 0; gearStats[g][sl] = {val:0, rank:0}; }
+                            gearIds[g][sl] = rid; gearStats[g][sl] = getLevelInfo(rid);
+                        } else { gearIds[g][sl] = 0; gearStats[g][sl] = {val:0, rank:0}; }
                     }
                 }
             }
         }
     }
 
-    document.getElementById('result').innerHTML = `성공 확률: <span class="highlight">${(success/1500*100).toFixed(1)}%</span>
-    <div class="strategy-box">
-        <b>💎 종결 옵작 가이드 (3옵션 & 고점 관리):</b><br>
-        • <b>3옵션 확보:</b> 2개의 유효 옵션이 떴다면 무조건 잠그고 3번째를 노리세요. 슬롯당 확률 때문에 쌩으로 3개를 띄우는 건 거의 불가능합니다.<br>
-        • <b>수치 잠금 전략:</b> 특정 옵션이 <span class="stat-badge">11단 이상</span>이라면 잠그고 수치 변경을 하는 것이 수치 총합을 올리는 데 효율적입니다.<br>
-        • <b>슬롯 우선순위:</b> 3번 슬롯(30%)에 유효 옵션이 뜨는 것이 '기적'이므로, 3번에 목표 옵션이 뜨면 수치가 낮아도 일단 고정하는 것이 정답입니다.
+    const rate = (success / iterations * 100).toFixed(1);
+    document.getElementById('result').innerHTML = `분석 성공 확률: <span class="highlight">${rate}%</span>
+    <div class="strategy-card">
+        <b>💡 분석된 최적의 수 (The Best Move):</b><br>
+        • <b>슬롯 전략:</b> 확률이 가장 낮은 <span class="highlight">3번 슬롯(30%)</span>에 유효 옵션이 걸리면 무조건 잠그고 시작하는 것이 1번 슬롯을 잠그는 것보다 모듈을 약 1.8배 아낍니다.<br>
+        • <b>잠금 관리:</b> 유효 옵션 종류가 다 모였어도 <span class="highlight">11단 이상의 옵션</span>은 잠그고 수치 변경을 하세요. 1개 잠금(비용 2)이 0잠금(비용 1)보다 종결 도달 속도가 빠릅니다.
     </div>`;
 }
-// 초기화 생략
+init();
 </script>
 </body>
 </html>
