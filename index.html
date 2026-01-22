@@ -3,123 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>니케 오버로드 옵작 시뮬레이터 Pro</title>
+    <title>니케 오버로드 전략 시뮬레이터</title>
     <style>
         :root { --nike-gold: #ffeb3b; --nike-blue: #00e5ff; --bg: #121212; --card: #1e1e1e; }
         body { font-family: 'Pretendard', sans-serif; background-color: var(--bg); color: #e0e0e0; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
-        .container { background-color: var(--card); padding: 25px; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); max-width: 480px; width: 100%; border: 1px solid #333; }
-        h1 { color: var(--nike-gold); text-align: center; font-size: 1.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-        .input-group { margin-bottom: 20px; }
+        .container { background-color: var(--card); padding: 25px; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); max-width: 550px; width: 100%; border: 1px solid #333; }
+        h1 { color: var(--nike-gold); text-align: center; font-size: 1.5rem; margin-bottom: 25px; }
+        .input-group { margin-bottom: 20px; padding: 15px; background: #252525; border-radius: 10px; border: 1px solid #444; }
+        .target-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
         label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: #aaa; font-weight: bold; }
-        input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #2a2a2a; color: white; box-sizing: border-box; outline: none; }
-        input:focus { border-color: var(--nike-gold); }
-        button { width: 100%; padding: 15px; border-radius: 8px; border: none; background: linear-gradient(135deg, #ffeb3b, #fbc02d); color: black; font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: 0.2s; margin-top: 10px; }
+        input, select { padding: 10px; border-radius: 6px; border: 1px solid #444; background: #333; color: white; outline: none; }
+        input[type="number"] { width: 80px; }
+        select { flex-grow: 1; }
+        .main-input { width: 100%; font-size: 1.1rem; padding: 12px; margin-bottom: 20px; }
+        button { width: 100%; padding: 15px; border-radius: 8px; border: none; background: linear-gradient(135deg, #ffeb3b, #fbc02d); color: black; font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: 0.2s; }
         button:hover { filter: brightness(1.1); transform: translateY(-1px); }
-        #result { margin-top: 25px; padding: 20px; background-color: #252525; border-radius: 10px; border-left: 5px solid var(--nike-gold); line-height: 1.8; }
+        #result { margin-top: 25px; padding: 20px; background-color: #2a2a2a; border-radius: 10px; border-top: 4px solid var(--nike-gold); line-height: 1.8; }
+        .strategy-box { background: #1a1a1a; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px dashed var(--nike-blue); }
         .highlight { color: var(--nike-gold); font-weight: bold; }
-        .blue-highlight { color: var(--nike-blue); font-weight: bold; }
-        .info-table { font-size: 0.75rem; color: #777; margin-top: 20px; padding: 10px; border-top: 1px solid #333; }
+        .blue { color: var(--nike-blue); font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>NIKKE 오버로드 시뮬레이터</h1>
+    <h1>NIKKE 옵작 전략 가이드</h1>
     
-    <div class="input-group">
-        <label>보유 커스텀 모듈</label>
-        <input type="number" id="moduleInput" value="100" min="1">
+    <label>보유 커스텀 모듈</label>
+    <input type="number" id="moduleInput" class="main-input" value="50">
+
+    <label>목표 옵션 설정 (최대 3개)</label>
+    <div id="targetContainer">
+        <div class="target-row">
+            <select class="opt-select" id="opt1"></select>
+            <input type="number" class="val-input" id="val1" placeholder="수치" min="1" max="15" value="11">
+            <span>단 이상</span>
+        </div>
+        <div class="target-row">
+            <select class="opt-select" id="opt2"></select>
+            <input type="number" class="val-input" id="val2" placeholder="수치" min="1" max="15" value="1">
+            <span>단 이상</span>
+        </div>
+        <div class="target-row">
+            <select class="opt-select" id="opt3"></select>
+            <input type="number" class="val-input" id="val3" placeholder="수치" min="1" max="15" value="1">
+            <span>단 이상</span>
+        </div>
     </div>
 
-    <div class="input-group">
-        <label>목표 옵션 선택</label>
-        <select id="targetOption"></select>
-    </div>
+    <button onclick="runStrategySimulation()">권장 전략 분석하기</button>
 
-    <div class="input-group">
-        <label>목표 옵션 최소 개수</label>
-        <input type="number" id="targetCount" value="1" min="1" max="12">
-    </div>
-
-    <button onclick="runSimulation()">분석 시작</button>
-
-    <div id="result">데이터를 입력하고 버튼을 눌러주세요.</div>
-    
-    <div class="info-table">
-        * 확률 테이블 기준: 1줄(100%), 2줄(50%), 3줄(30%) 적용<br>
-        * 옵션별 등장 확률(10~12%) 및 수치 등급 확률(60/35/5%) 적용 완료
-    </div>
+    <div id="result">보유 모듈에 따른 최적의 세팅 방법을 제안합니다.</div>
 </div>
 
 <script>
-// 제공된 이미지 데이터 기반 설정
 const optionData = [
-    { name: "우월코드 데미지 증가", weight: 10, levels: [9.54, 10.94, 12.34, 13.75, 15.15, 16.55, 17.95, 19.35, 20.75, 22.15, 23.56, 24.96, 26.36, 27.76, 29.16] },
-    { name: "명중률 증가", weight: 12, levels: [4.77, 5.47, 6.18, 6.88, 7.59, 8.29, 9.00, 9.70, 10.40, 11.11, 11.81, 12.52, 13.22, 13.93, 14.63] },
-    { name: "최대 장탄 수 증가", weight: 12, levels: [27.84, 31.95, 36.06, 40.17, 44.28, 48.39, 52.50, 56.60, 60.71, 64.82, 68.93, 73.04, 77.15, 81.26, 85.37] },
-    { name: "공격력 증가", weight: 10, levels: [4.77, 5.47, 6.18, 6.88, 7.59, 8.29, 9.00, 9.70, 10.40, 11.11, 11.81, 12.52, 13.22, 13.93, 14.63] },
-    { name: "차지 데미지 증가", weight: 12, levels: [4.77, 5.47, 6.18, 6.88, 7.59, 8.29, 9.00, 9.70, 10.40, 11.11, 11.81, 12.52, 13.22, 13.93, 14.63] },
-    { name: "차지 속도 증가", weight: 12, levels: [1.98, 2.28, 2.57, 2.86, 3.16, 3.45, 3.75, 4.04, 4.33, 4.63, 4.92, 5.21, 5.51, 5.80, 6.09] },
-    { name: "크리티컬 피해량 증가", weight: 12, levels: [6.64, 7.62, 8.60, 9.58, 10.56, 11.54, 12.52, 13.50, 14.48, 15.46, 16.44, 17.42, 18.40, 19.38, 20.36] },
-    { name: "크리티컬 확률 증가", weight: 10, levels: [2.30, 2.64, 2.98, 3.32, 3.66, 4.00, 4.35, 4.69, 5.03, 5.37, 5.70, 6.05, 6.39, 6.73, 7.07] },
-    { name: "방어력 증가", weight: 10, levels: [4.77, 5.47, 6.18, 6.88, 7.59, 8.29, 9.00, 9.70, 10.40, 11.11, 11.81, 12.52, 13.22, 13.93, 14.63] }
+    { name: "없음(선택안함)", weight: 0 },
+    { name: "우월코드 데미지", weight: 10 },
+    { name: "명중률 증가", weight: 12 },
+    { name: "최대 장탄 수", weight: 12 },
+    { name: "공격력 증가", weight: 10 },
+    { name: "차지 데미지", weight: 12 },
+    { name: "차지 속도", weight: 12 },
+    { name: "크리티컬 피해량", weight: 12 },
+    { name: "크리티컬 확률", weight: 10 },
+    { name: "방어력 증가", weight: 10 }
 ];
 
-// 셀렉트 박스 옵션 동적 생성
-const select = document.getElementById('targetOption');
-optionData.forEach((opt, idx) => {
-    let el = document.createElement('option');
-    el.value = idx;
-    el.textContent = `${opt.name} (${opt.weight}%)`;
-    select.appendChild(el);
+// 셀렉트 박스 초기화
+document.querySelectorAll('.opt-select').forEach(sel => {
+    optionData.forEach((opt, idx) => {
+        let el = document.createElement('option');
+        el.value = idx;
+        el.textContent = opt.name;
+        sel.appendChild(el);
+    });
 });
 
 function getLevel() {
     const r = Math.random() * 100;
-    if (r < 60) return Math.floor(Math.random() * 5); // 1~5단
-    if (r < 95) return Math.floor(Math.random() * 5) + 5; // 6~10단
-    return Math.floor(Math.random() * 5) + 10; // 11~15단
+    if (r < 60) return Math.floor(Math.random() * 5) + 1; 
+    if (r < 95) return Math.floor(Math.random() * 5) + 6; 
+    return Math.floor(Math.random() * 5) + 11;
 }
 
-function runSimulation() {
+function runStrategySimulation() {
     const modules = parseInt(document.getElementById('moduleInput').value);
-    const targetIdx = parseInt(document.getElementById('targetOption').value);
-    const targetGoal = parseInt(document.getElementById('targetCount').value);
-    const targetOpt = optionData[targetIdx];
-    
+    const targets = [
+        { id: parseInt(document.getElementById('opt1').value), minLv: parseInt(document.getElementById('val1').value) },
+        { id: parseInt(document.getElementById('opt2').value), minLv: parseInt(document.getElementById('val2').value) },
+        { id: parseInt(document.getElementById('opt3').value), minLv: parseInt(document.getElementById('val3').value) }
+    ].filter(t => t.id > 0);
+
+    if (targets.length === 0) { alert("최소 한 개의 목표 옵션을 선택해주세요."); return; }
+
+    let totalMatchCount = 0;
     const iterations = 10000;
-    let totalSuccessSims = 0;
-    let totalHighLevelCount = 0; // 11단 이상 발견 횟수
-    
     const totalWeight = optionData.reduce((acc, cur) => acc + cur.weight, 0);
 
     for (let i = 0; i < iterations; i++) {
-        let foundInSim = 0;
-        for (let m = 0; m < modules; m++) {
+        let currentModules = modules;
+        let foundAny = false;
+        
+        // 깡통 돌리기 시뮬레이션 (비용 1 기준)
+        while (currentModules > 0) {
+            currentModules--;
             let activeLines = 1;
             if (Math.random() < 0.5) activeLines++;
             if (Math.random() < 0.3) activeLines++;
 
             for (let j = 0; j < activeLines; j++) {
-                // 옵션 결정 (전체 가중치 대비 해당 옵션 확률)
-                if (Math.random() * totalWeight < targetOpt.weight) {
-                    foundInSim++;
-                    if (getLevel() >= 10) totalHighLevelCount++;
+                let rolledOptIdx = 0;
+                let r = Math.random() * totalWeight;
+                let tempSum = 0;
+                for(let k=1; k<optionData.length; k++){
+                    tempSum += optionData[k].weight;
+                    if(r <= tempSum) { rolledOptIdx = k; break; }
+                }
+
+                let rolledLevel = getLevel();
+                if (targets.some(t => t.id === rolledOptIdx && rolledLevel >= t.minLv)) {
+                    foundAny = true; break;
                 }
             }
+            if (foundAny) break;
         }
-        if (foundInSim >= targetGoal) totalSuccessSims++;
+        if (foundAny) totalMatchCount++;
     }
 
-    const winRate = ((totalSuccessSims / iterations) * 100).toFixed(1);
-    const avgHighLevel = (totalHighLevelCount / iterations).toFixed(2);
+    const successRate = (totalMatchCount / iterations * 100).toFixed(1);
+    
+    // 전략 가이드 텍스트 생성
+    let strategyText = "";
+    if (modules < 20) {
+        strategyText = "현재 모듈이 매우 부족합니다. 옵션을 잠그는 것은 사치입니다. <span class='highlight'>무조건 0잠금</span>으로 돌려 3줄을 띄우는 것부터 시작하세요.";
+    } else if (successRate < 30) {
+        strategyText = "목표 수치가 매우 높습니다. 우선 <span class='highlight'>1순위 유효 옵션 하나</span>가 3번째 줄에 뜰 때까지 돌린 후, 그 옵션을 잠그고 다음을 노리는 것이 효율적입니다.";
+    } else {
+        strategyText = "보유 모듈이 넉넉하거나 목표가 현실적입니다. <span class='blue'>2잠금 전략</span>보다는 1개만 잠그고 돌려 가성비를 챙기시는 것을 권장합니다.";
+    }
 
     document.getElementById('result').innerHTML = `
-        <strong>분석 결과</strong><br>
-        보유 모듈로 목표(<span class="highlight">${targetOpt.name} ${targetGoal}개</span>) 획득 확률: <span class="highlight" style="font-size:1.2rem">${winRate}%</span><br><br>
-        최고 등급(11~15단) 기대 획득: <span class="blue-highlight">${avgHighLevel}회</span><br>
-        15단 수치: <span class="blue-highlight">${targetOpt.levels[14]}%</span><br><br>
-        <small>※ 1만 회 시뮬레이션 통계 기반</small>
+        <strong>[분석 리포트]</strong><br>
+        설정한 목표 옵션 중 하나라도 얻을 확률: <span class="highlight">${successRate}%</span><br>
+        <div class="strategy-box">
+            <strong>💡 추천 옵작 전략:</strong><br>
+            ${strategyText}
+        </div>
+        <br><small>※ 15단계(최상위) 확률은 단 1%이므로 수치 목표를 낮추면 확률이 대폭 상승합니다.</small>
     `;
 }
 </script>
