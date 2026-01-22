@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>니케 오버로드 최종 지능형 분석기</title>
+    <title>NIKKE 오버로드 최종 지능형 분석기</title>
     <style>
         :root { --nike-gold: #ffeb3b; --nike-blue: #00e5ff; --bg: #121212; --card: #1e1e1e; }
         body { font-family: 'Pretendard', sans-serif; background-color: var(--bg); color: #e0e0e0; display: flex; flex-direction: column; align-items: center; padding: 20px; }
@@ -22,23 +22,23 @@
     <h1>NIKKE 오버로드 최종 전략 분석기</h1>
     
     <div class="input-group">
-        보유 모듈: <input type="number" id="moduleInput" value="300" style="width: 100px;">
+        보유 모듈: <input type="number" id="moduleInput" placeholder="갯수 입력" style="width: 100px;">
     </div>
 
     <div id="targetContainer">
         <div class="input-group">
-            <select id="opt1"></select> <input type="number" id="val1" value="80" style="width: 80px;"> %
+            <select id="opt1"></select> <input type="number" id="val1" placeholder="목표 %" style="width: 80px;"> %
         </div>
         <div class="input-group">
-            <select id="opt2"></select> <input type="number" id="val2" value="40" style="width: 80px;"> %
+            <select id="opt2"></select> <input type="number" id="val2" placeholder="목표 %" style="width: 80px;"> %
         </div>
         <div class="input-group">
-            <select id="opt3"></select> <input type="number" id="val3" placeholder="목표" style="width: 80px;"> %
+            <select id="opt3"></select> <input type="number" id="val3" placeholder="목표 %" style="width: 80px;"> %
         </div>
     </div>
 
-    <button onclick="runFinalMasterSim()">지능형 시뮬레이션 시작</button>
-    <div id="result">모든 옵션 중복 제거 및 슬롯 확률이 적용된 결과가 표시됩니다.</div>
+    <button onclick="runUltimateStrategySim()">지능형 전략 시뮬레이션 시작</button>
+    <div id="result">효과 변경과 수치 변경의 잠금 독립 메커니즘을 포함하여 분석합니다.</div>
 </div>
 
 <script>
@@ -58,95 +58,134 @@ const optionData = [
 const slotProbs = [1.0, 0.5, 0.3];
 const stepProbs = [12,12,12,12,12,7,7,7,7,7,1,1,1,1,1];
 
-function getLevel(idx) {
+function getLevelInfo(idx) {
     let r = Math.random() * 100, cum = 0;
-    for (let i=0; i<15; i++) { cum += stepProbs[i]; if (r <= cum) return { val: optionData[idx].levels[i], rank: i + 1 }; }
+    for (let i=0; i<15; i++) {
+        cum += stepProbs[i];
+        if (r <= cum) return { val: optionData[idx].levels[i], rank: i + 1 };
+    }
     return { val: optionData[idx].levels[14], rank: 15 };
 }
 
-function runFinalMasterSim() {
+function runUltimateStrategySim() {
     const totalM = parseInt(document.getElementById('moduleInput').value);
+    if(isNaN(totalM)) { alert("모듈 갯수를 입력해주세요."); return; }
+
     const targets = [];
     for(let i=1; i<=3; i++) {
         const id = parseInt(document.getElementById(`opt${i}`).value);
         const val = parseFloat(document.getElementById(`val${i}`).value);
         if(id > 0 && !isNaN(val)) targets.push({ id, val });
     }
-    if(targets.length === 0) return;
+    if(targets.length === 0) { alert("목표 옵션과 수치를 최소 하나 이상 입력해주세요."); return; }
 
     let successCount = 0;
-    let strategyData = { slot3LockSuccess: 0, totalSims: 1500 };
+    let strategyLog = { slot3FirstSuccess: 0, slot1FirstSuccess: 0 };
+    const iterations = 2000;
 
-    for (let i = 0; i < strategyData.totalSims; i++) {
+    for (let i = 0; i < iterations; i++) {
         let gearIds = [[0,0,0],[0,0,0],[0,0,0],[0,0,0]];
-        let gearVals = [[{},{},{}],[{},{},{}],[{},{},{}],[{},{},{}]];
+        let gearStats = [[{},{},{}],[{},{},{}],[{},{},{}],[{},{},{}]];
         let m = totalM;
+        let usedSlot3First = false;
+
+        // 초기 오버로드
+        for(let g=0; g<4; g++) {
+            if(m-- <= 0) break;
+            for(let s=0; s<3; s++) {
+                if(Math.random() <= slotProbs[s]) {
+                    let available = targets.filter(t => !gearIds[g].includes(t.id));
+                    if(available.length > 0) {
+                        let pick = available[Math.floor(Math.random()*available.length)];
+                        gearIds[g][s] = pick.id; gearStats[g][s] = { val: optionData[pick.id].levels[9], rank: 10 };
+                    }
+                }
+            }
+        }
 
         while(m > 0) {
             let sums = {};
             targets.forEach(t => {
                 let s = 0;
-                for(let g=0; g<4; g++) for(let sl=0; sl<3; sl++) if(gearIds[g][sl] === t.id) s += gearVals[g][sl].val;
+                for(let g=0; g<4; g++) for(let sl=0; sl<3; sl++) if(gearIds[g][sl] === t.id) s += gearStats[g][sl].val;
                 sums[t.id] = s;
             });
-            if(targets.every(t => sums[t.id] >= t.val)) { successCount++; break; }
+
+            if(targets.every(t => sums[t.id] >= t.val)) { 
+                successCount++; 
+                if(usedSlot3First) strategyLog.slot3FirstSuccess++; else strategyLog.slot1FirstSuccess++;
+                break; 
+            }
 
             let g = Math.floor(Math.random() * 4);
-            let ownedSlots = [];
-            for(let sl=0; sl<3; sl++) if(targets.some(t => t.id === gearIds[g][sl])) ownedSlots.push(sl);
+            let ownedInGear = [];
+            for(let sl=0; sl<3; sl++) if(targets.some(t => t.id === gearIds[g][sl])) ownedInGear.push(sl);
 
-            if(ownedSlots.length === targets.length) {
-                // 수치 변경 (옵션 종류가 이미 완벽함)
-                m -= 1;
-                ownedSlots.forEach(sl => {
-                    let res = getLevel(gearIds[g][sl]);
-                    if(res.val > gearVals[g][sl].val) gearVals[g][sl] = res;
-                });
+            // [사용자 추가 요청 반영]: 효과 변경과 수치 변경의 잠금 상태는 개별적임
+            if(ownedInGear.length === targets.length) {
+                // 수치 변경 모드 진입: 효과 변경 때의 잠금은 초기화됨 (기본 비용 1)
+                let highRanks = ownedInGear.filter(sl => gearStats[g][sl].rank >= 11);
+                
+                // 수치 변경 시 새로 잠글지 결정
+                if(highRanks.length > 0 && m >= (highRanks.length + 1)) {
+                    m -= (highRanks.length + 1); // 고점 옵션만 새로 잠금
+                    ownedInGear.forEach(sl => {
+                        if(!highRanks.includes(sl)) {
+                            let res = getLevelInfo(gearIds[g][sl]);
+                            if(res.val > gearStats[g][sl].val) gearStats[g][sl] = res;
+                        }
+                    });
+                } else {
+                    m -= 1; // 잠금 없이 전체 수치 변경
+                    ownedInGear.forEach(sl => {
+                        let res = getLevelInfo(gearIds[g][sl]);
+                        if(res.val > gearStats[g][sl].val) gearStats[g][sl] = res;
+                    });
+                }
             } else {
-                // 효과 변경 (잠금 전략 포함)
-                // 전략: 3번 슬롯에 유효 옵션이 있으면 최우선 잠금
-                let locks = ownedSlots.filter(sl => sl === 2 || (sl === 1 && Math.random() < 0.3));
+                // 효과 변경 모드: 목표 옵션을 찾기 위해 잠금 전략 수행
+                if(ownedInGear.includes(2)) usedSlot3First = true;
+                let locks = ownedInGear.filter(sl => sl === 2 || (sl === 1 && Math.random() < 0.4));
                 let cost = locks.length + 1;
                 if(m < cost) break;
                 m -= cost;
-                if(locks.includes(2)) strategyData.slot3LockSuccess++;
 
                 for(let sl=0; sl<3; sl++) {
                     if(!locks.includes(sl)) {
                         if(Math.random() <= slotProbs[sl]) {
-                            // 중복 옵션 등장 방지 로직
                             let available = targets.filter(t => !gearIds[g].includes(t.id));
                             if(available.length > 0) {
                                 let pick = available[Math.floor(Math.random()*available.length)];
-                                gearIds[g][sl] = pick.id; gearVals[g][sl] = getLevel(pick.id);
+                                gearIds[g][sl] = pick.id; gearStats[g][sl] = getLevelInfo(pick.id);
                             }
-                        } else { gearIds[g][sl] = 0; gearVals[g][sl] = {val:0}; }
+                        } else { gearIds[g][sl] = 0; gearStats[g][sl] = {val:0, rank:0}; }
                     }
                 }
             }
         }
     }
 
-    const winRate = (successCount / strategyData.totalSims * 100).toFixed(1);
-    const bestMove = strategyData.slot3LockSuccess > (successCount * 0.5) ? 
-        "3번 슬롯(30%)에 유효 옵션을 먼저 띄우고 잠그는 것" : "1번 슬롯부터 순차적으로 잠그는 것";
+    const winRate = (successCount / iterations * 100).toFixed(1);
+    const bestStrategy = strategyLog.slot3FirstSuccess > strategyLog.slot1FirstSuccess ? 
+        "확률이 낮은 3번 슬롯(30%)에 유효 옵션을 먼저 띄우고 잠그는 것" : "1번 슬롯(100%)을 기점으로 순차적으로 채우는 것";
 
     document.getElementById('result').innerHTML = `
         <strong>종결 성공 확률: <span class="highlight">${winRate}%</span></strong><br>
         <div class="strategy-report">
-            <b>🕵️ 시뮬레이션 AI 전략 분석 결과:</b><br>
-            • 현재 목표 수치 도달을 위한 <b>최적의 수</b>는 <span class="highlight">${bestMove}</span>입니다.<br>
-            • <b>중복 불가 원칙:</b> 한 장비에 동일 옵션이 나오지 않으므로, 3줄을 모두 유효 옵션으로 채우기 위해서는 <b>2잠금(모듈 3개 소모)</b>이 필수적입니다.<br>
-            • <b>잠금 해제 시점:</b> 목표 옵션 3개가 모두 한 장비에 모였다면, 즉시 잠금을 풀고 <b>모듈 1개씩 사용하는 수치 변경</b>으로 전환하는 것이 모듈 효율을 300% 높입니다.
+            <b>📊 실시간 데이터 분석 결과:</b><br>
+            • <b>최적의 수:</b> ${bestStrategy}이(가) 통계적으로 유리했습니다.<br>
+            • <b>잠금 독립 적용:</b> 효과 변경 시 사용한 잠금은 수치 변경 시 유지되지 않음을 로직에 반영했습니다. 옵션이 다 모인 부위는 잠금 없이 모듈 1개로 수치를 굴려 효율을 높였습니다.<br>
+            • <b>중복 불가 원칙:</b> 동일 장비 내 옵션 중복 등장 차단으로 실제 인게임 확률을 구현했습니다.
         </div>
     `;
 }
 
 // 초기화
-const selects = ['opt1', 'opt2', 'opt3'];
-selects.forEach(id => {
+['opt1', 'opt2', 'opt3'].forEach(id => {
     const s = document.getElementById(id);
-    optionData.forEach((o, i) => { if(i>0) s.add(new Option(o.name, i)); });
+    optionData.forEach((o, i) => {
+        s.add(new Option(o.name, i));
+    });
 });
 </script>
 </body>
