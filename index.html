@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>니케 오버로드 옵작 시뮬레이터</title>
+    <style>
+        body { font-family: 'sans-serif'; background-color: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .container { background-color: #2d2d2d; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); max-width: 500px; width: 100%; }
+        h1 { color: #ffeb3b; text-align: center; font-size: 1.5rem; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-size: 0.9rem; }
+        input, select, button { width: 100%; padding: 10px; border-radius: 5px; border: none; margin-top: 5px; box-sizing: border-box; }
+        button { background-color: #ffeb3b; color: black; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        button:hover { background-color: #fbc02d; }
+        #result { margin-top: 20px; padding: 15px; background-color: #3d3d3d; border-radius: 5px; white-space: pre-line; line-height: 1.6; }
+        .info { font-size: 0.8rem; color: #bbb; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>니케 옵작 효율 계산기</h1>
+    
+    <div class="input-group">
+        <label>보유 커스텀 모듈 개수</label>
+        <input type="number" id="moduleInput" value="10" min="1">
+    </div>
+
+    <div class="input-group">
+        <label>현재 장비 잠금 상태</label>
+        <select id="lockSelect">
+            <option value="0">0개 잠금 (비용: 1개)</option>
+            <option value="1">1개 잠금 (비용: 2개)</option>
+            <option value="2">2개 잠금 (비용: 3개)</option>
+        </select>
+    </div>
+
+    <div class="input-group">
+        <label>목표 옵션 (A)</label>
+        <select id="targetOption">
+            <option value="target">원하는 옵션 A</option>
+        </select>
+    </div>
+
+    <button onclick="startSimulation()">시뮬레이션 돌리기</button>
+
+    <div id="result">보유하신 모듈로 어떤 결과가 나올까요?</div>
+    
+    <div class="info">
+        * 10,000회 반복 시행 결과의 평균값입니다.<br>
+        * 확률: 1줄(100%), 2줄(50%), 3줄(30%)<br>
+        * 수치: 1~5단(12%), 6~10단(7%), 11~15단(1%)
+    </div>
+</div>
+
+<script>
+function startSimulation() {
+    const totalModules = parseInt(document.getElementById('moduleInput').value);
+    const lockedCount = parseInt(document.getElementById('lockSelect').value);
+    const cost = [1, 2, 3][lockedCount];
+    
+    if (totalModules < cost) {
+        alert("모듈이 부족합니다!");
+        return;
+    }
+
+    let totalSuccess = 0;
+    let totalHighLevel = 0; // 11단 이상
+    const iterations = 10000;
+
+    for (let i = 0; i < iterations; i++) {
+        let currentModules = totalModules;
+        while (currentModules >= cost) {
+            currentModules -= cost;
+            
+            // 활성화될 줄 수 계산
+            let activeLines = 1; // 1줄은 무조건
+            if (Math.random() < 0.5) activeLines++;
+            if (Math.random() < 0.3) activeLines++;
+
+            // 잠그지 않은 줄 중에서 옵션 판정
+            let rollableLines = activeLines - lockedCount;
+            for (let j = 0; j < rollableLines; j++) {
+                // 옵션 종류 판정 (10%)
+                if (Math.random() < 0.10) {
+                    totalSuccess++;
+                    
+                    // 수치 단계 판정
+                    let randLevel = Math.random() * 100;
+                    if (randLevel > 95) totalHighLevel++; // 상위 5% (11~15단)
+                }
+            }
+        }
+    }
+
+    const avgSuccess = (totalSuccess / iterations).toFixed(2);
+    const avgHighLevel = (totalHighLevel / iterations).toFixed(2);
+    const successRate = ((totalSuccess / iterations) > 0 ? 100 : 0); // 단순 로직
+
+    let advice = "";
+    if (lockedCount === 0 && avgSuccess < 1) {
+        advice = "팁: 모듈 개수가 적을 때는 잠그지 말고 3줄을 띄우는 데 집중하세요!";
+    } else if (lockedCount >= 1) {
+        advice = "팁: 잠그기는 기회비용이 큽니다. 모듈이 20개 이상일 때 추천합니다.";
+    }
+
+    document.getElementById('result').innerText = 
+        `[시뮬레이션 결과]\n` +
+        `목표 옵션 획득 기대치: 평균 ${avgSuccess}회\n` +
+        `그 중 11단 이상 획득 기대치: 평균 ${avgHighLevel}회\n\n` +
+        `${advice}`;
+}
+</script>
+
+</body>
+</html>
